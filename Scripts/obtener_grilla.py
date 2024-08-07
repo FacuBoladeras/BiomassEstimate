@@ -26,7 +26,7 @@ def create_grid(gdf, cell_size):
     return gpd.GeoDataFrame(cells, crs="EPSG:3857")
 
 # Cargar el shapefile con el polígono
-input_shapefile = r"C:\\Users\\Facundo\\Documents\\pre-delta.shp"
+input_shapefile = r"C:\Users\Facu\Desktop\MalawiWoodfuelSite_1a.shp"
 gdf = gpd.read_file(input_shapefile)
 
 # Crear la grilla de 100x100 metros
@@ -37,7 +37,7 @@ grid = create_grid(gdf, cell_size)
 grid = grid.to_crs(gdf.crs)
 
 # Guardar el resultado como un nuevo shapefile
-output_shapefile = "output_grid.shp"
+output_shapefile = "Malawi-grid.shp"
 grid.to_file(output_shapefile)
 
 print("Grilla creada y guardada en:", output_shapefile)
