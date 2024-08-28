@@ -36,8 +36,8 @@ def resample_raster(input_tiff, output_tiff, scale_factor):
     print(f"Nuevo TIFF remuestreado guardado en: {output_tiff}")
 
 # Rutas de los archivos de entrada y salida
-input_tiff = r"C:\Users\Facu\Downloads\Malawi_2015-terrainC.tif"
-output_tiff = "Malawi-resample-2015.tif"
+input_tiff = r"C:\Users\Facu\Downloads\Malambique_2010_relleno.tif"
+output_tiff = "Malambique_2010_resample2.tif"
 
 # Factor de escala para remuestrear a 100x100 metros desde 30x30 metros
 scale_factor = 100 / 30
