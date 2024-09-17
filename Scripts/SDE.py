@@ -48,7 +48,7 @@ def calculate_mean_and_std_from_folder(folder_path):
     return mean_data, std_data, metadata
 
 # Ejemplo de uso
-folder_path = r'C:\Users\Facu\Downloads\Estimators_sde'  # Reemplaza con tu ruta
+folder_path = r'C:\Users\Facu\Downloads\2010'  # Reemplaza con tu ruta
 
 mean_data, std_data, metadata = calculate_mean_and_std_from_folder(folder_path)
 
