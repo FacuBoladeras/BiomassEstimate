@@ -48,7 +48,7 @@ def calculate_mean_and_std_from_folder(folder_path):
     return mean_data, std_data, metadata
 
 # Ejemplo de uso
-folder_path = r'C:\Users\Facu\Downloads\Bootstrap_definitive_2023'  # Reemplaza con tu ruta
+folder_path = r'C:\Users\Facu\Downloads\Bootstrap_Kisangami_2023'  # Reemplaza con tu ruta
 
 mean_data, std_data, metadata = calculate_mean_and_std_from_folder(folder_path)
 
@@ -57,7 +57,7 @@ if mean_data is not None and std_data is not None:
     # Actualizar metadatos para los archivos de salida
     metadata.update(dtype=rasterio.float32, count=1, nodata=None)
 
-    output_mean_path = os.path.join(folder_path, 'mean_2023.tif')
+    output_mean_path = os.path.join(folder_path, 'mean_2019.tif')
     output_std_path = os.path.join(folder_path, 'std_2023.tif')
 
     # Guardar el TIFF con la media
