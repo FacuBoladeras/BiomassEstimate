@@ -1,53 +1,54 @@
+import os
 import numpy as np
 import rasterio
 from scipy.ndimage import generic_filter
 
-def fill_nodata(input_tiff, output_tiff, size=3, iterations=1):
+def fill_nan_with_neighbors(input_tiff, output_tiff, radius=1, min_valid_neighbors=3):
     """
-    Rellena los valores NaN en un archivo TIFF basado en el promedio de los vecinos.
-    
-    :param input_tiff: Ruta al archivo TIFF de entrada.
-    :param output_tiff: Ruta al archivo TIFF de salida.
-    :param size: Número de píxeles vecinos (ventana cuadrada) a tomar en cuenta para el relleno.
-    :param iterations: Número de iteraciones para el relleno.
-    """
-    # Abrir el archivo TIFF
-    with rasterio.open(input_tiff) as src:
-        data = src.read(1)  # Leer la primera banda del TIFF
-        profile = src.profile  # Obtener los metadatos del raster
+    Rellena los valores NaN en un TIFF utilizando un número definido de píxeles vecinos válidos.
 
-    # Inicializar la máscara de valores nodata (NaN)
-    nodata_mask = np.isnan(data)
-    
-    # Función para rellenar los nodata utilizando vecinos
-    def fill_with_neighbors(values):
-        center_value = values[len(values) // 2]  # Valor central
-        if np.isnan(center_value):  # Si es nodata, llenar con la media de los vecinos
-            neighbor_values = values[~np.isnan(values)]  # Excluir nodata en los vecinos
-            if len(neighbor_values) > 0:
-                return np.mean(neighbor_values)  # Promedio de vecinos
+    Parameters:
+    - input_tiff: Ruta del archivo TIFF de entrada.
+    - output_tiff: Ruta del archivo TIFF de salida.
+    - radius: Radio de vecinos a considerar para la interpolación (por defecto 1).
+    - min_valid_neighbors: Mínimo número de vecinos válidos requeridos para rellenar un píxel NaN (por defecto 3).
+    """
+
+    def interpolate(values):
+        """Función interna para rellenar NaN si se cumplen los vecinos mínimos válidos."""
+        center_value = values[len(values) // 2]
+        
+        if np.isnan(center_value):
+            # Contar la cantidad de vecinos válidos (no NaN)
+            valid_neighbors = values[~np.isnan(values)]
+            
+            # Si hay suficientes vecinos válidos, devolver el promedio, si no, devolver NaN
+            if len(valid_neighbors) >= min_valid_neighbors:
+                return np.mean(valid_neighbors)
             else:
-                return np.nan  # Mantener como NaN si no hay vecinos válidos
-        return center_value  # Dejar el valor intacto si no es nodata
+                return np.nan
+        else:
+            return center_value
 
-    # Realizar el relleno en múltiples iteraciones
-    for _ in range(iterations):
-        # Aplicar el relleno usando una ventana de vecinos (size x size)
-        data = generic_filter(data, fill_with_neighbors, size=(size, size), mode='constant', cval=np.nan)
+    with rasterio.open(input_tiff) as src:
+        array = src.read(1)  # Leer la primera banda
+        meta = src.meta
 
-    # Reemplazar los NaN restantes por 0, si se requiere
-    data = np.nan_to_num(data, nan=0)
+    # Crear un tamaño de filtro basado en el radio
+    filter_size = (2 * radius + 1, 2 * radius + 1)
 
-    # Guardar el nuevo TIFF con los valores rellenados
-    profile.update(dtype=rasterio.float32)  # Asegurarse de que el tipo de datos sea correcto
-    with rasterio.open(output_tiff, 'w', **profile) as dst:
-        dst.write(data, 1)
-    
-    print(f"Archivo TIFF rellenado guardado en: {output_tiff}")
+    # Aplicar el filtro para rellenar NaNs usando la función de interpolación definida
+    filled_array = generic_filter(array, interpolate, size=filter_size)
+
+    # Guardar el resultado en un nuevo archivo TIFF
+    meta.update(dtype=rasterio.float32)
+
+    with rasterio.open(output_tiff, "w", **meta) as dest:
+        dest.write(filled_array, 1)
+
+    print(f"Archivo guardado en: {output_tiff}")
 
 # Ejemplo de uso
-input_tiff = r"C:\Users\Facu\Downloads\Malambique_2010_30m.tif"
-output_tiff = r"C:\Users\Facu\Downloads\Malambique_2010_relleno.tif"
-
-# Rellenar los valores nodata utilizando una ventana de 3x3 vecinos y 2 iteraciones
-fill_nodata(input_tiff, output_tiff, size=3, iterations=2)
+input_tiff = r"C:\Users\Facu\Downloads\Outputs\AGBD_2018.tif"
+output_tiff = r"C:\Users\Facu\Downloads\Outputs\AGBD2_2018.tif"
+fill_nan_with_neighbors(input_tiff, output_tiff, radius=2, min_valid_neighbors=5)
