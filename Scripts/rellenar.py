@@ -1,54 +1,38 @@
-import os
-import numpy as np
 import rasterio
-from scipy.ndimage import generic_filter
+import numpy as np
 
-def fill_nan_with_neighbors(input_tiff, output_tiff, radius=1, min_valid_neighbors=3):
+def fill_nan_with_value(tiff_path, output_path, fill_value=1):
     """
-    Rellena los valores NaN en un TIFF utilizando un número definido de píxeles vecinos válidos.
+    Rellena los valores NaN de un archivo TIFF con un valor específico.
 
-    Parameters:
-    - input_tiff: Ruta del archivo TIFF de entrada.
-    - output_tiff: Ruta del archivo TIFF de salida.
-    - radius: Radio de vecinos a considerar para la interpolación (por defecto 1).
-    - min_valid_neighbors: Mínimo número de vecinos válidos requeridos para rellenar un píxel NaN (por defecto 3).
+    Parámetros:
+        tiff_path (str): Ruta al archivo TIFF original.
+        output_path (str): Ruta donde se guardará el TIFF modificado.
+        fill_value (int/float): Valor con el que se reemplazarán los NaN (default = 0).
     """
-
-    def interpolate(values):
-        """Función interna para rellenar NaN si se cumplen los vecinos mínimos válidos."""
-        center_value = values[len(values) // 2]
+    # Abrir el archivo TIFF
+    with rasterio.open(tiff_path) as src:
+        # Leer los datos como una matriz numpy
+        data = src.read(1)  # Leer solo la primera banda
         
-        if np.isnan(center_value):
-            # Contar la cantidad de vecinos válidos (no NaN)
-            valid_neighbors = values[~np.isnan(values)]
-            
-            # Si hay suficientes vecinos válidos, devolver el promedio, si no, devolver NaN
-            if len(valid_neighbors) >= min_valid_neighbors:
-                return np.mean(valid_neighbors)
-            else:
-                return np.nan
-        else:
-            return center_value
+        # Reemplazar los valores NaN con el valor especificado
+        data_filled = np.nan_to_num(data, nan=fill_value)
+        
+        # Obtener la metadata del archivo original
+        out_meta = src.meta.copy()
+    
+    # Guardar el archivo TIFF modificado
+    with rasterio.open(output_path, "w", **out_meta) as dest:
+        dest.write(data_filled, 1)  # Escribir en la primera banda
+    
+    print(f"El archivo TIFF con valores NaN reemplazados ha sido guardado en: {output_path}")
 
-    with rasterio.open(input_tiff) as src:
-        array = src.read(1)  # Leer la primera banda
-        meta = src.meta
 
-    # Crear un tamaño de filtro basado en el radio
-    filter_size = (2 * radius + 1, 2 * radius + 1)
 
-    # Aplicar el filtro para rellenar NaNs usando la función de interpolación definida
-    filled_array = generic_filter(array, interpolate, size=filter_size)
+# Configuración de parámetros
+tiff_path = r"C:\Users\Facu\Downloads\Rf_Bootstrap_mdg_south_20119\Bootstrap_mdg_south_2019_sde.tif"  # Ruta del raster original
+shapefile_path = r"C:\Users\Facu\Documents\mgd_south.shp"  # Ruta del shapefile
+output_path = r"C:\Users\Facu\Downloads\Output mdg_south\mdg_south_sde_2019.tif"  # Ruta del archivo TIFF de salida
+fill_value = 1  # Valor con el que se rellenarán los píxeles sin datos
 
-    # Guardar el resultado en un nuevo archivo TIFF
-    meta.update(dtype=rasterio.float32)
-
-    with rasterio.open(output_tiff, "w", **meta) as dest:
-        dest.write(filled_array, 1)
-
-    print(f"Archivo guardado en: {output_tiff}")
-
-# Ejemplo de uso
-input_tiff = r"C:\Users\Facu\Downloads\Outputs\AGBD_2018.tif"
-output_tiff = r"C:\Users\Facu\Downloads\Outputs\AGBD2_2018.tif"
-fill_nan_with_neighbors(input_tiff, output_tiff, radius=2, min_valid_neighbors=5)
+fill_nan_with_value(tiff_path, output_path, fill_value=1)
